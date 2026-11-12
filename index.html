@@ -495,12 +495,6 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        function handleLogout() {
-    // Since login is removed, logout just reloads the main dashboard view
-    loadUserDogs();
-    navigateTo('dashboard');
-    showToast('Dashboard refreshed');
-}
 
         // View Navigation
         function navigateTo(view) {
@@ -526,19 +520,8 @@ window.addEventListener('DOMContentLoaded', () => {
             if (stored) {
                 dogsList = JSON.parse(stored);
             } else {
-                // Initial Default Sample Dog if empty
-                dogsList = [{
-                    id: 'dog_demo_101',
-                    name: 'Buddy',
-                    breed: 'Golden Retriever',
-                    age: '2.5 Years',
-                    gender: 'Male',
-                    owner: currentUser.name || 'Jane Doe',
-                    phone: '+15550192834',
-                    photo: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=800',
-                    notes: 'Friendly & playful! Loves tennis balls. Microchipped and up to date on all shots.'
-                }];
-                saveUserDogs();
+                // Start with an empty list
+                dogsList = [];
             }
             renderDogsGrid();
         }
