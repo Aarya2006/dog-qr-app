@@ -413,12 +413,15 @@
                         </div>
                     </div>
 
-                    <div class="p-5 pt-0 grid grid-cols-2 gap-2 mt-4">
-                        <button onclick="generateDogQR('${dog.id}')" class="w-full bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-qrcode"></i> QR Code
+                    <div class="p-5 pt-0 grid grid-cols-3 gap-2 mt-4">
+                        <button onclick="generateDogQR('${dog.id}')" class="w-full bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold py-2.5 px-2 rounded-xl transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-qrcode"></i> QR
                         </button>
-                        <button onclick="deleteDog('${dog.id}')" class="w-full bg-slate-50 hover:bg-red-50 text-slate-500 hover:text-red-600 text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-trash"></i> Delete
+                        <button onclick="openDogModal('${dog.id}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 px-2 rounded-xl transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-pen"></i> Edit
+                        </button>
+                        <button onclick="deleteDog('${dog.id}')" class="w-full bg-slate-50 hover:bg-red-50 text-slate-500 hover:text-red-600 text-xs font-bold py-2.5 px-2 rounded-xl transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
                 `;
@@ -427,11 +430,31 @@
         }
 
         // Modal Controls
-        function openDogModal() {
-            document.getElementById('form-dog').reset();
-            document.getElementById('dog-id').value = '';
-            document.getElementById('modal-title').textContent = 'Register New Dog';
-            document.getElementById('modal-dog').classList.remove('hidden');
+        function openDogModal(id = null) {
+            const modal = document.getElementById('modal-dog');
+            const form = document.getElementById('form-dog');
+            form.reset();
+
+            if (id) {
+                const dog = dogsList.find(d => d.id === id);
+                if (dog) {
+                    document.getElementById('modal-title').textContent = 'Edit Dog Details';
+                    document.getElementById('dog-id').value = dog.id;
+                    document.getElementById('dog-name').value = dog.name;
+                    document.getElementById('dog-breed').value = dog.breed;
+                    document.getElementById('dog-age').value = dog.age;
+                    document.getElementById('dog-gender').value = dog.gender;
+                    document.getElementById('dog-owner').value = dog.owner;
+                    document.getElementById('dog-phone').value = dog.phone;
+                    document.getElementById('dog-photo-url').value = dog.photo;
+                    document.getElementById('dog-notes').value = dog.notes || '';
+                }
+            } else {
+                document.getElementById('modal-title').textContent = 'Register New Dog';
+                document.getElementById('dog-id').value = '';
+            }
+
+            modal.classList.remove('hidden');
         }
 
         function closeDogModal() {
@@ -444,8 +467,10 @@
 
         function handleSaveDog(e) {
             e.preventDefault();
-            const newDog = {
-                id: 'dog_' + Date.now(),
+            const existingId = document.getElementById('dog-id').value;
+
+            const dogData = {
+                id: existingId || 'dog_' + Date.now(),
                 name: document.getElementById('dog-name').value,
                 breed: document.getElementById('dog-breed').value,
                 age: document.getElementById('dog-age').value,
@@ -456,11 +481,20 @@
                 notes: document.getElementById('dog-notes').value
             };
 
-            dogsList.push(newDog);
+            if (existingId) {
+                const index = dogsList.findIndex(d => d.id === existingId);
+                if (index !== -1) {
+                    dogsList[index] = dogData;
+                }
+                showToast('Dog profile updated!');
+            } else {
+                dogsList.push(dogData);
+                showToast('Dog registered successfully!');
+            }
+
             saveUserDogs();
             closeDogModal();
             renderDogsGrid();
-            showToast('Dog registered successfully!');
         }
 
         function deleteDog(id) {
