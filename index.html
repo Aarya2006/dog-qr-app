@@ -608,17 +608,26 @@ const dogData = {
             document.getElementById('modal-qr').classList.remove('hidden');
         }
 
-        function displayPublicDogCard(dog) {
+      function displayPublicDogCard(dog) {
             document.getElementById('pub-name').textContent = dog.name;
             document.getElementById('pub-breed-badge').textContent = dog.breed;
             document.getElementById('pub-age').textContent = dog.age;
             document.getElementById('pub-gender').textContent = dog.gender;
             document.getElementById('pub-owner-name').textContent = dog.owner;
-            document.getElementById('pub-photo').src = dog.photo || 'https://placehold.co/600x400';
+            
+            // Fix: If a scanned QR code has a placeholder photo, fallback gracefully to a clean badge with the dog's name
+            const displayPhoto = (dog.photo && dog.photo.startsWith('http')) 
+                ? dog.photo 
+                : `https://placehold.co/600x400/ea580c/ffffff?text=${encodeURIComponent(dog.name)}`;
+            
+            document.getElementById('pub-photo').src = displayPhoto;
             document.getElementById('pub-notes').textContent = dog.notes || 'No special medical instructions provided.';
             
-            document.getElementById('pub-phone-link').href = `tel:${dog.phone}`;
-            document.getElementById('pub-whatsapp-link').href = `https://wa.me/${dog.phone.replace(/[^0-9]/g, '')}`;
+            const cleanPhone = dog.phone ? dog.phone.replace(/[^0-9]/g, '') : '';
+            const waPhone = cleanPhone.length === 10 ? `1${cleanPhone}` : cleanPhone;
+
+            document.getElementById('pub-phone-link').href = `tel:${cleanPhone}`;
+            document.getElementById('pub-whatsapp-link').href = `https://wa.me/${waPhone}`;
 
             navigateTo('public');
         }
