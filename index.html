@@ -68,13 +68,13 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-4">
-                    <span id="user-display-name"
-                        class="text-sm font-semibold text-slate-600 hidden sm:inline-block">Pet Owner</span>
+               <div class="flex items-center gap-4">
+                   <!--  <span id="user-display-name"
+                        class="text-sm font-semibold text-slate-600 hidden sm:inline-block">By Shail Patel</span>
                     <button onclick="handleLogout()"
                         class="text-xs sm:text-sm font-semibold text-slate-500 hover:text-red-600 flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-slate-100 transition">
                         <i class="fa-solid fa-rotate"></i>
-                        <span>Refresh</span>
+                        <span>Refresh</span> -->
                     </button>
                 </div>
             </div>
@@ -214,7 +214,7 @@
                 </button>
             </div>
 
-            <form id="form-dog" onsubmit="handleSaveDog(event)" class="p-6 space-y-4">
+            <form id="form-dog" onsubmit="handleSaveDog(event)" autocomplete="off" class="p-6 space-y-4">
                 <input type="hidden" id="dog-id">
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -257,20 +257,32 @@
                             placeholder="e.g. John Doe">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Contact Phone *</label>
-                        <input type="tel" id="dog-phone" required
-                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            placeholder="+1234567890">
-                    </div>
+    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Contact Phone (10 Digits) *</label>
+    <input type="tel" id="dog-phone" required maxlength="10" pattern="[0-9]{10}"
+        oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
+        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+        placeholder="e.g. 4165550192"
+        title="Please enter a valid 10-digit phone number">
+</div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Dog Photo URL</label>
-                    <input type="url" id="dog-photo-url"
-                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                        placeholder="https://images.unsplash.com/photo-...">
-                    <p class="text-[11px] text-slate-400 mt-1">Paste a valid image web URL.</p>
-                </div>
+    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Dog Photo *</label>
+    <div class="flex items-center gap-3">
+        <!-- Hidden file picker -->
+        <input type="file" id="dog-photo-file" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+        
+        <!-- Custom upload button -->
+        <button type="button" onclick="document.getElementById('dog-photo-file').click()"
+            class="flex-grow py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 border border-slate-200">
+            <i class="fa-solid fa-cloud-arrow-up text-brand-500 text-base"></i>
+            <span id="file-name-label">Choose Image from Device</span>
+        </button>
+    </div>
+    <!-- Hidden input to store the processed image string -->
+    <input type="hidden" id="dog-photo-base64">
+    <p class="text-[11px] text-slate-400 mt-1">Upload directly from your phone or computer storage.</p>
+</div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Medical / Care Notes</label>
@@ -433,7 +445,18 @@
         function openDogModal(id = null) {
             const modal = document.getElementById('modal-dog');
             const form = document.getElementById('form-dog');
+            if (!modal || !form) return;
+            
             form.reset();
+
+            // Reset file upload state
+            const fileInput = document.getElementById('dog-photo-file');
+            const fileLabel = document.getElementById('file-name-label');
+            const base64Input = document.getElementById('dog-photo-base64');
+            
+            if (fileInput) fileInput.value = '';
+            if (fileLabel) fileLabel.textContent = 'Choose Image from Device';
+            if (base64Input) base64Input.value = '';
 
             if (id) {
                 const dog = dogsList.find(d => d.id === id);
@@ -446,7 +469,10 @@
                     document.getElementById('dog-gender').value = dog.gender;
                     document.getElementById('dog-owner').value = dog.owner;
                     document.getElementById('dog-phone').value = dog.phone;
-                    document.getElementById('dog-photo-url').value = dog.photo;
+                    if (base64Input) base64Input.value = dog.photo || '';
+                    if (fileLabel && dog.photo && !dog.photo.startsWith('data:')) {
+                        fileLabel.textContent = 'Existing Image Active';
+                    }
                     document.getElementById('dog-notes').value = dog.notes || '';
                 }
             } else {
@@ -457,6 +483,46 @@
             modal.classList.remove('hidden');
         }
 
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('file-name-label').textContent = file.name;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 300;
+                    const MAX_HEIGHT = 300;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById('dog-photo-base64').value = dataUrl;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
         function closeDogModal() {
             document.getElementById('modal-dog').classList.add('hidden');
         }
@@ -468,18 +534,19 @@
         function handleSaveDog(e) {
             e.preventDefault();
             const existingId = document.getElementById('dog-id').value;
+const photoData = document.getElementById('dog-photo-base64').value || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800';
 
-            const dogData = {
-                id: existingId || 'dog_' + Date.now(),
-                name: document.getElementById('dog-name').value,
-                breed: document.getElementById('dog-breed').value,
-                age: document.getElementById('dog-age').value,
-                gender: document.getElementById('dog-gender').value,
-                owner: document.getElementById('dog-owner').value,
-                phone: document.getElementById('dog-phone').value,
-                photo: document.getElementById('dog-photo-url').value || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800',
-                notes: document.getElementById('dog-notes').value
-            };
+const dogData = {
+    id: existingId || 'dog_' + Date.now(),
+    name: document.getElementById('dog-name').value,
+    breed: document.getElementById('dog-breed').value,
+    age: document.getElementById('dog-age').value,
+    gender: document.getElementById('dog-gender').value,
+    owner: document.getElementById('dog-owner').value,
+    phone: document.getElementById('dog-phone').value,
+    photo: photoData,
+    notes: document.getElementById('dog-notes').value
+};
 
             if (existingId) {
                 const index = dogsList.findIndex(d => d.id === existingId);
@@ -511,7 +578,13 @@
             const dog = dogsList.find(d => d.id === id);
             if (!dog) return;
 
-            const encodedData = encodeURIComponent(JSON.stringify(dog));
+            // Exclude huge uploaded base64 images from the URL so the QR code remains scannable
+            const qrPayload = {
+                ...dog,
+                photo: dog.photo && dog.photo.startsWith('data:') ? '' : dog.photo
+            };
+
+            const encodedData = encodeURIComponent(JSON.stringify(qrPayload));
             const baseUrl = window.location.href.split('?')[0];
             activeQRUrl = `${baseUrl}?dogData=${encodedData}`;
 
