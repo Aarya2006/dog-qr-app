@@ -513,7 +513,13 @@
             const dog = dogsList.find(d => d.id === id);
             if (!dog) return;
 
-            const encodedData = encodeURIComponent(JSON.stringify(dog));
+            // Exclude huge uploaded base64 images from the URL so the QR code remains scannable
+            const qrPayload = {
+                ...dog,
+                photo: dog.photo && dog.photo.startsWith('data:') ? '' : dog.photo
+            };
+
+            const encodedData = encodeURIComponent(JSON.stringify(qrPayload));
             const baseUrl = window.location.href.split('?')[0];
             activeQRUrl = `${baseUrl}?dogData=${encodedData}`;
 
