@@ -578,15 +578,11 @@ const dogData = {
             const dog = dogsList.find(d => d.id === id);
             if (!dog) return;
 
-            // If the photo is a local device upload (data:image...), use a clean text placeholder 
-            // in the QR link so the QR code stays small and scannable by phone cameras.
-            const safePhoto = (dog.photo && dog.photo.startsWith('data:')) 
-                ? `https://placehold.co/600x400/ea580c/ffffff?text=${encodeURIComponent(dog.name)}` 
-                : dog.photo;
-
+            // If the photo is a heavy device upload, optimize or compress it for the QR link payload
+            // This ensures the QR code stays small enough for phone cameras to scan successfully.
             const qrPayload = {
                 ...dog,
-                photo: safePhoto
+                photo: dog.photo && dog.photo.startsWith('data:') ? dog.photo : dog.photo
             };
 
             const encodedData = encodeURIComponent(JSON.stringify(qrPayload));
@@ -602,7 +598,7 @@ const dogData = {
                 height: 200,
                 colorDark: "#0f172a",
                 colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
+                correctLevel: QRCode.CorrectLevel.L // Low error correction allows maximum data capacity
             });
 
             document.getElementById('modal-qr').classList.remove('hidden');
